@@ -17,6 +17,7 @@ The device is WiFi-enabled and it can send logs to your Firebase Realtime Databa
 ### Hardware
 - ESP32-S2-Mini or any ESP32-based devkit should work
 - USB connection to your host computer
+- WiFi connectivity
 
 ### Software
 - Depending on your ESP32 device, install the appropriate USB-serial driver
@@ -28,6 +29,7 @@ The device is WiFi-enabled and it can send logs to your Firebase Realtime Databa
   - "ESP32Time"
   
 ### Others
+- Google Firebase RealTime Database (Refer to Arduino examples for ESP32)
 - Mad soldering skills
 
 ## Why ESP32-S2-Mini?
@@ -36,3 +38,11 @@ It's also very easy to use with Arduino IDE.
 
 There is nothing in this Arduino sketch that is peculiar to ESP32-S2-Mini. So, it should work with other ESP32 hardware, maybe with a change of the pins used for ADC and GPIO output pin.
 
+# Set Up
+### Pin Configuration
+- ADC (for reading soil moisture level from soil moisture sensor)
+- GPIO output pin (for on/off 5v water pump)
+- GPIO output pin (for supplying ~5.55mA @3.3v to soil moisture sensor. This allows for power-saving as we can switch off the soil moisture sensor when necessary)
+
+### 3.3v & 5v Power Supply
+TBD
