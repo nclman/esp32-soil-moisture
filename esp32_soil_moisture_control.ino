@@ -102,23 +102,31 @@ int pumpOnSeconds = 0;  // variable to count pump time
 Method to print the reason by which ESP32
 has been awaken from sleep
 */
-#ifdef DEBUG_LOG
-void print_wakeup_reason(){
+void process_wakeup_reason(){
   esp_sleep_wakeup_cause_t wakeup_reason;
 
   wakeup_reason = esp_sleep_get_wakeup_cause();
 
   switch(wakeup_reason)
   {
-    case ESP_SLEEP_WAKEUP_EXT0 : Serial.println("Wakeup caused by external signal using RTC_IO"); break;
-    case ESP_SLEEP_WAKEUP_EXT1 : Serial.println("Wakeup caused by external signal using RTC_CNTL"); break;
-    case ESP_SLEEP_WAKEUP_TIMER : Serial.println("Wakeup caused by timer"); break;
-    case ESP_SLEEP_WAKEUP_TOUCHPAD : Serial.println("Wakeup caused by touchpad"); break;
-    case ESP_SLEEP_WAKEUP_ULP : Serial.println("Wakeup caused by ULP program"); break;
-    default : Serial.printf("Wakeup was not caused by deep sleep: %d\n",wakeup_reason); break;
+    //case ESP_SLEEP_WAKEUP_EXT0 : Serial.println("Wakeup caused by external signal using RTC_IO"); break;
+    //case ESP_SLEEP_WAKEUP_EXT1 : Serial.println("Wakeup caused by external signal using RTC_CNTL"); break;
+    case ESP_SLEEP_WAKEUP_TIMER :
+#ifdef DEBUG_LOG
+      Serial.println("Wakeup caused by timer");
+#endif
+      break;
+    //case ESP_SLEEP_WAKEUP_TOUCHPAD : Serial.println("Wakeup caused by touchpad"); break;
+    //case ESP_SLEEP_WAKEUP_ULP : Serial.println("Wakeup caused by ULP program"); break;
+    default :
+#ifdef DEBUG_LOG
+      Serial.printf("Wakeup was not caused by deep sleep: %d\n",wakeup_reason);
+#endif
+      // If battery was drained for some reason, avoid normal op to allow solar panel to charge battery
+      enterDeepSleep(TIME_TO_SLEEP);
+      break;
   }
 }
-#endif
 
 void setup(){
 #ifdef DEBUG_LOG
@@ -251,44 +259,7 @@ void setup(){
     timeToSleepSecs = TIME_TO_SLEEP;
   }
 
-  /*
-  First we configure the wake up source
-  We set our ESP32 to wake up every 5 seconds
-  */
-  esp_sleep_enable_timer_wakeup(timeToSleepSecs * uS_TO_S_FACTOR);
-#ifdef DEBUG_LOG
-  Serial.println("RTC valid: " + String(rtc_valid));
-  Serial.println("Setup ESP32 to sleep for every " + String(timeToSleepSecs) +
-  " Seconds");
-#endif
-
-  /*
-  Next we decide what all peripherals to shut down/keep on
-  By default, ESP32 will automatically power down the peripherals
-  not needed by the wakeup source, but if you want to be a poweruser
-  this is for you. Read in detail at the API docs
-  http://esp-idf.readthedocs.io/en/latest/api-reference/system/deep_sleep.html
-  Left the line commented as an example of how to configure peripherals.
-  The line below turns off all RTC peripherals in deep sleep.
-  */
-  esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
-#ifdef DEBUG_LOG
-  Serial.println("Configured all RTC Peripherals to be powered down in sleep");
-#endif
-
-  /*
-  Now that we have setup a wake cause and if needed setup the
-  peripherals state in deep sleep, we can now start going to
-  deep sleep.
-  In the case that no wake up sources were provided but deep
-  sleep was started, it will sleep forever unless hardware
-  reset occurs.
-  */
-#ifdef DEBUG_LOG
-  Serial.println("Going to sleep now");
-  Serial.flush();
-#endif 
-  esp_deep_sleep_start();
+  enterDeepSleep(timeToSleepSecs);
 #ifdef DEBUG_LOG
   Serial.println("This will never be printed");
 #endif
@@ -326,6 +297,46 @@ bool Fb_init() {
   return true;
 }
 
+void enterDeepSleep(int sleep_secs){
+  /*
+  Configure the wake up source
+  We set our ESP32 to wake up every 5 seconds
+  */
+  esp_sleep_enable_timer_wakeup(sleep_secs * uS_TO_S_FACTOR);
+#ifdef DEBUG_LOG
+  Serial.println("RTC valid: " + String(rtc_valid));
+  Serial.println("Setup ESP32 to sleep for every " + String(sleep_secs) +
+  " Seconds");
+#endif
+
+  /*
+  Next we decide what all peripherals to shut down/keep on
+  By default, ESP32 will automatically power down the peripherals
+  not needed by the wakeup source, but if you want to be a poweruser
+  this is for you. Read in detail at the API docs
+  http://esp-idf.readthedocs.io/en/latest/api-reference/system/deep_sleep.html
+  Left the line commented as an example of how to configure peripherals.
+  The line below turns off all RTC peripherals in deep sleep.
+  */
+  esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
+#ifdef DEBUG_LOG
+  Serial.println("Configured all RTC Peripherals to be powered down in sleep");
+#endif
+
+  /*
+  Now that we have setup a wake cause and if needed setup the
+  peripherals state in deep sleep, we can now start going to
+  deep sleep.
+  In the case that no wake up sources were provided but deep
+  sleep was started, it will sleep forever unless hardware
+  reset occurs.
+  */
+#ifdef DEBUG_LOG
+  Serial.println("Going to sleep now");
+  Serial.flush();
+#endif 
+  esp_deep_sleep_start();
+}
 
 void printLocalTime(){
   struct tm timeinfo;
