@@ -41,6 +41,7 @@ Nickleman <nclman77@gmail.com>
 #include <Firebase_ESP_Client.h>
 #include "addons/TokenHelper.h"
 #include "addons/RTDBHelper.h"
+#include "driver/rtc_io.h"
 
 #undef DEBUG_LOG
 #define DEBUG_LOG 1
@@ -89,7 +90,8 @@ int timeToSleepSecs = 0;
 #define ADC_WET_VALUE 4000  // ADC low if wet
 #define PUMP_ON_SECONDS_MAX 3*60  // 3 minutes max
 
-int moisturePin = 7;    // ADC pin location for moisture sensor (labeled '7' on board)
+int moisturePowerPin = 9;	// GPIO out pin to supply power to soil moisture sensor (~5mA)
+int moistureAdcPin = 7;    // ADC pin location for moisture sensor (labeled '7' on board)
 int pumpPin = 5;        // GPIO out pin to control water pump
 int moistureValue = 0;  // ADC reading
 int pumpOnSeconds = 0;  // variable to count pump time
@@ -132,8 +134,14 @@ void setup(){
 #endif
 
   // Our soil moisture processing here
+  pinMode(moisturePowerPin, OUTPUT);
   pinMode(pumpPin, OUTPUT); // configure pin(s)
-  moistureValue = analogRead(moisturePin);  // Read moisture level
+
+  // Power up moisture sensor
+  digitalWrite(moisturePowerPin, HIGH);
+  delay(3);	// allow some time for reading to stabilize
+
+  moistureValue = analogRead(moistureAdcPin);  // Read moisture level
 #ifdef DEBUG_LOG
   Serial.println("Moisture: " + String(moistureValue));
 #endif
@@ -149,7 +157,7 @@ void setup(){
     while (moistureValue > ADC_WET_VALUE && pumpOnSeconds < PUMP_ON_SECONDS_MAX) {
       delay(1000); // check every 10 seconds
       pumpOnSeconds++;  // countdown
-      moistureValue = analogRead(moisturePin);
+      moistureValue = analogRead(moistureAdcPin);
 #ifdef DEBUG_LOG
       Serial.println("Moisture: " + String(moistureValue) + " Time lapsed: " + String(pumpOnSeconds));
 #endif
@@ -161,6 +169,13 @@ void setup(){
     Serial.println("Pump Off");
 #endif
   }
+
+  // Power down moisture sensor
+  digitalWrite(moisturePowerPin, LOW);
+
+  // Isolate GPIO output to save power during deep sleep
+  rtc_gpio_isolate(GPIO_NUM_5);	// pumpPin
+  rtc_gpio_isolate(GPIO_NUM_9);	// moisturePowerPin
   // End soil moisture processing
 
   // Attempt connect to Wifi. Add a timeout
