@@ -142,6 +142,10 @@ void setup(){
 #endif
 
   // Our soil moisture processing here
+  // rtc_gpio_isolate() will hold the pins. Unhold them after wake
+  rtc_gpio_hold_dis(GPIO_NUM_9);
+  rtc_gpio_hold_dis(GPIO_NUM_5);
+
   pinMode(moisturePowerPin, OUTPUT);
   pinMode(pumpPin, OUTPUT); // configure pin(s)
 
