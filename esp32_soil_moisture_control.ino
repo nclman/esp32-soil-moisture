@@ -121,9 +121,10 @@ void process_wakeup_reason(){
     default :
 #ifdef DEBUG_LOG
       Serial.printf("Wakeup was not caused by deep sleep: %d\n",wakeup_reason);
-#endif
+#else
       // If battery was drained for some reason, avoid normal op to allow solar panel to charge battery
       enterDeepSleep(TIME_TO_SLEEP);
+#endif
       break;
   }
 }
@@ -254,6 +255,9 @@ void setup(){
   Serial.println("Current hour: " + String(currentHour));
 #endif
 
+#ifdef DEBUG_LOG
+  timeToSleepSecs = 5;
+#else
   // Could be triggered between 2100 to 2159
   if (rtc_valid == true && currentHour > 20) {
     timeToSleepSecs = (32 - currentHour) * 3600 - rtc.getMinute() * 60; // 24 - currentHour + 8
@@ -262,6 +266,7 @@ void setup(){
   } else {
     timeToSleepSecs = TIME_TO_SLEEP;
   }
+#endif
 
   enterDeepSleep(timeToSleepSecs);
 #ifdef DEBUG_LOG
