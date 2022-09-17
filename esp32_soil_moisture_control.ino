@@ -40,31 +40,31 @@ Nickleman <nclman77@gmail.com>
 #include <ESP32Time.h>
 #include <Firebase_ESP_Client.h>
 #include "addons/TokenHelper.h"
-#include "addons/RTDBHelper.h"
 #include "driver/rtc_io.h"
+#include <Preferences.h>
 
 #undef DEBUG_LOG
 #define DEBUG_LOG 1
 
-#define DEVICE_ID "xxxxxx"	// will be subfolder name in realtime database
+#define DEVICE_ID   preferences.getString("id", "")
 
 #define uS_TO_S_FACTOR 1000000ULL  /* Conversion factor for micro seconds to seconds */
 #define TIME_TO_SLEEP  20*60        /* Time ESP32 will go to sleep (in seconds) */
 
-RTC_DATA_ATTR int bootCount = 0;
+Preferences preferences;
 
 // WiFi credentials
-#define WIFI_SSID     "your_ssid"
-#define WIFI_PASSWORD "your_password"
+#define WIFI_SSID     preferences.getString("wifi_ssid", "")
+#define WIFI_PASSWORD preferences.getString("wifi_password", "")
 int wifiRetryCnt = 100;
 
 // Firebase
-#define API_KEY "xxxxx"	// api key of your Firebase RTDB
-#define RTDB_URL "https://xxxxxxx.firebasedatabase.app" // URL of your Firebase RTDB
+#define API_KEY     preferences.getString("api_key", "")
+#define RTDB_URL    preferences.getString("rtdb_url", "")
 
 // Firebase login credentials
-#define USER_EMAIL "email@email.com"	// user account created in firebase authentication console
-#define USER_PASSWORD "account_password"	// password of user account
+#define USER_EMAIL      preferences.getString("fb_email", "")
+#define USER_PASSWORD   preferences.getString("fb_password", "")
 
 //Define Firebase Data object
 FirebaseData fbdo;
@@ -133,14 +133,9 @@ void setup(){
 #ifdef DEBUG_LOG
   Serial.begin(115200);
   delay(1000); //Take some time to open up the Serial Monitor
-
-  //Increment boot number and print it every reboot
-  ++bootCount;
-  Serial.println("Boot number: " + String(bootCount));
-
-  //Print the wakeup reason for ESP32
-  print_wakeup_reason();
 #endif
+
+  process_wakeup_reason();
 
   // Our soil moisture processing here
   // rtc_gpio_isolate() will hold the pins. Unhold them after wake
@@ -192,7 +187,9 @@ void setup(){
   // End soil moisture processing
 
   // Attempt connect to Wifi. Add a timeout
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  preferences.begin("device_info", true);   // read-only
+  WiFi.begin(WIFI_SSID.c_str(), WIFI_PASSWORD.c_str());
+
   while (WiFi.status() != WL_CONNECTED && wifiRetryCnt > 0) {
     delay(100);
     wifiRetryCnt--;
@@ -219,10 +216,10 @@ void setup(){
       fbPath += fbauth.token.uid.c_str();
       fbPath += "/devices/";
       fbPath += DEVICE_ID;
+      fbPath += "/data";
 
       fbJson.add("moisture", moistureValue);
       fbJson.add("pump_on_seconds", pumpOnSeconds);
-      //fbJson.add("time", rtc.getTimeDate().c_str());
       fbJson.add("ts", rtc.getEpoch());
 
       if (Firebase.RTDB.pushJSON(&fbdo, fbPath, &fbJson)) {
@@ -239,6 +236,8 @@ void setup(){
 
       // How to exit Firebase cleanly?
     }
+
+    preferences.end();
 
     // Disconnnect WiFi
     WiFi.disconnect(true);
@@ -279,6 +278,7 @@ void loop(){
 }
 
 bool Fb_init() {
+
   /* Assign the api key (required) */
   fbconfig.api_key = API_KEY;
 
@@ -346,6 +346,7 @@ void enterDeepSleep(int sleep_secs){
 #endif 
   esp_deep_sleep_start();
 }
+
 
 void printLocalTime(){
   struct tm timeinfo;
