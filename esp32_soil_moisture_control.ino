@@ -43,6 +43,13 @@ Nickleman <nclman77@gmail.com>
 #include "driver/rtc_io.h"
 #include <Preferences.h>
 
+#include "Update.h"
+#include "HTTPClient.h"
+
+#define MAJOR_VERSION 0
+#define MINOR_VERSION 0
+#define MICRO_VERSION 0
+
 #undef DEBUG_LOG
 #define DEBUG_LOG 1
 
@@ -81,6 +88,7 @@ const int   daylightOffset_sec = 0;
 // Persistent data across deep sleep
 RTC_DATA_ATTR ESP32Time rtc(3600*8);  // GMT+8
 RTC_DATA_ATTR bool rtc_valid = false; // if NTP is synced, set to true
+RTC_DATA_ATTR int previousDay = 0;   // for once per day operations
 
 int currentHour = 0;
 int timeToSleepSecs = 0;
@@ -234,6 +242,22 @@ void setup(){
 #endif
       }
 
+      // Check for firmware updates once a day
+      int currentDay = rtc.getDay();
+      if (currentDay != previousDay) {
+        previousDay = currentDay;
+        check_firmware_update();
+
+        String fbPathVersion = fbPath + "/version";
+        String current = String(MAJOR_VERSION) + "." + String(MINOR_VERSION) + "." + String(MICRO_VERSION);
+        if (Firebase.RTDB.getString(&fbdo, fbPathVersion) == true) {
+          if (current != fbdo.to<String>()) {
+            Firebase.RTDB.setString(&fbdo, fbPathVersion, current);
+          }
+        } else {
+          Firebase.RTDB.setString(&fbdo, fbPathVersion, current);
+        }
+      }
       // How to exit Firebase cleanly?
     }
 
@@ -275,6 +299,91 @@ void setup(){
 
 void loop(){
   //This is not going to be called
+}
+
+void check_firmware_update() {
+  String path = F("/firmware/DEVICE_ID/latest");
+  if (Firebase.RTDB.getString(&fbdo, path) == true) {
+    // compare to our current version
+    String fwversion = fbdo.to<String>();
+
+    int major = fwversion.substring(0, fwversion.indexOf('.') - 1).toInt();
+    int minor = fwversion.substring(fwversion.indexOf('.') + 1, fwversion.lastIndexOf('.') - 1).toInt();
+    int micro = fwversion.substring(fwversion.lastIndexOf('.') + 1).toInt();
+
+#ifdef DEBUG_LOG
+    Serial.println("current version: " + String(MAJOR_VERSION) + "." + String(MINOR_VERSION) + "." + String(MICRO_VERSION));
+    Serial.println("latest version: " + fwversion);
+#endif
+
+    if (major > MAJOR_VERSION ||
+       (major == MAJOR_VERSION && minor > MINOR_VERSION) ||
+       (major == MAJOR_VERSION && minor == MINOR_VERSION && micro > MICRO_VERSION)) {
+      // newer version available. Get url & update
+      path = F("/firmware/DEVICE_ID/url");
+
+      if (Firebase.RTDB.getString(&fbdo, path) == true) {
+ #ifdef DEBUG_LOG
+        Serial.println(fbdo.to<String>());
+ #endif
+        HTTPClient http;
+        http.begin(fbdo.to<String>());
+        if (http.GET() > 0) {
+          // Check that we have enough space for the new binary.
+          int contentLen = http.getSize();
+#ifdef DEBUG_LOG
+          Serial.printf("Content-Length: %d\n", contentLen);
+#endif
+          bool canBegin = Update.begin(contentLen);
+          if (!canBegin) {
+#ifdef DEBUG_LOG
+            Serial.println(F("Not enough space to begin OTA"));
+#endif
+            return;
+          }
+
+          // Write the HTTP stream to the Update library.
+          WiFiClient* client = http.getStreamPtr();
+          size_t written = Update.writeStream(*client);
+#ifdef DEBUG_LOG
+          Serial.printf("OTA: %d/%d bytes written.\n", written, contentLen);
+#endif
+          if (written != contentLen) {
+#ifdef DEBUG_LOG
+            Serial.println(F("Wrote partial binary. Giving up."));
+#endif
+            return;
+          }
+
+          if (!Update.end()) {
+#ifdef DEBUG_LOG
+            Serial.println("Error from Update.end(): " + 
+              String(Update.getError()));
+#endif
+            return;
+          }
+
+          if (Update.isFinished()) {
+#ifdef DEBUG_LOG
+            Serial.println(F("Update successfully completed. Rebooting."));
+#endif
+            // This line is specific to the ESP32 platform:
+            ESP.restart();
+          } else {
+#ifdef DEBUG_LOG
+            Serial.println("Error from Update.isFinished(): " + 
+                String(Update.getError()));
+#endif
+            return;
+          }
+        }
+      }
+    }
+  } else {
+#ifdef DEBUG_LOG
+    Serial.println(F("Failed to get latest firmware version"));
+#endif
+  }
 }
 
 bool Fb_init() {
