@@ -63,7 +63,6 @@ Preferences preferences;
 // WiFi credentials
 #define WIFI_SSID     preferences.getString("wifi_ssid", "")
 #define WIFI_PASSWORD preferences.getString("wifi_password", "")
-int wifiRetryCnt = 100;
 
 // Firebase
 #define API_KEY     preferences.getString("api_key", "")
@@ -77,8 +76,6 @@ int wifiRetryCnt = 100;
 FirebaseData fbdo;
 FirebaseAuth fbauth;
 FirebaseConfig fbconfig;
-
-FirebaseJson fbJson;  // json object for interacting with RTDB
 
 // Network Time Service
 const char* ntpServer = "pool.ntp.org";
@@ -98,9 +95,9 @@ int timeToSleepSecs = 0;
 #define ADC_WET_VALUE 4000  // ADC low if wet
 #define PUMP_ON_SECONDS_MAX 3*60  // 3 minutes max
 
-int moisturePowerPin = 9;	// GPIO out pin to supply power to soil moisture sensor (~5mA)
-int moistureAdcPin = 7;    // ADC pin location for moisture sensor (labeled '7' on board)
-int pumpPin = 5;        // GPIO out pin to control water pump
+const int moisturePowerPin = 9;	// GPIO out pin to supply power to soil moisture sensor (~5mA)
+const int moistureAdcPin = 7;    // ADC pin location for moisture sensor (labeled '7' on board)
+const int pumpPin = 5;        // GPIO out pin to control water pump
 int moistureValue = 0;  // ADC reading
 int pumpOnSeconds = 0;  // variable to count pump time
 
@@ -198,6 +195,7 @@ void setup(){
   preferences.begin("device_info", true);   // read-only
   WiFi.begin(WIFI_SSID.c_str(), WIFI_PASSWORD.c_str());
 
+  int wifiRetryCnt = 100;
   while (WiFi.status() != WL_CONNECTED && wifiRetryCnt > 0) {
     delay(100);
     wifiRetryCnt--;
@@ -226,6 +224,7 @@ void setup(){
       fbPath += DEVICE_ID;
       fbPath += "/data";
 
+      FirebaseJson fbJson;  // json object for interacting with RTDB
       fbJson.add("moisture", moistureValue);
       fbJson.add("pump_on_seconds", pumpOnSeconds);
       fbJson.add("ts", rtc.getEpoch());
