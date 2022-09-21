@@ -45,4 +45,18 @@ There is nothing in this Arduino sketch that is peculiar to ESP32-S2-Mini. So, i
 - GPIO output pin (for supplying ~5.55mA @3.3v to soil moisture sensor. This allows for power-saving as we can switch off the soil moisture sensor when necessary)
 
 ### 3.3v & 5v Power Supply
-TBD
+TODO:
+
+### Google Firebase
+Having a cloud database for this project has several benefits:
+1. Check on your device anytime, anywhere
+2. Firmware update OTA
+  - Have the device pull update file from the cloud database (future update)
+3. Set parameters on your device, remotely
+4. Data from multiple devices in one cloud location
+5. Your devices don't need to be running all the time. They can sleep and poll the database whenever to conserve power
+6. All the above means we can build a mobile and/or web app to manage all devices after deployment
+7. And of course, we get to learn about Firebase!
+
+There are many articles, videos, that already cover Google Firebase and how to get started, so I will not be going into those details.
+Here, I used Firebase's Real-Time Database for telemetry data storage, and Cloud Storage for holding firmware binary files for OTA update.
