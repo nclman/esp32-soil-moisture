@@ -37,7 +37,6 @@ Nickleman <nclman77@gmail.com>
 
 #include <WiFi.h>
 #include "time.h"
-#include <ESP32Time.h>
 #include <Firebase_ESP_Client.h>
 #include "addons/TokenHelper.h"
 #include "driver/rtc_io.h"
@@ -46,7 +45,7 @@ Nickleman <nclman77@gmail.com>
 #include "Update.h"
 #include "HTTPClient.h"
 
-#define MAJOR_VERSION 0
+#define MAJOR_VERSION 0   // use these values for OTA update
 #define MINOR_VERSION 0
 #define MICRO_VERSION 0
 
@@ -79,15 +78,14 @@ FirebaseConfig fbconfig;
 
 // Network Time Service
 const char* ntpServer = "pool.ntp.org";
-const long  gmtOffset_sec = 0;
+const long  gmtOffset_sec = 8*3600;   // GMT+8
 const int   daylightOffset_sec = 0;
 
 // Persistent data across deep sleep
-RTC_DATA_ATTR ESP32Time rtc(3600*8);  // GMT+8
+RTC_DATA_ATTR struct tm timeinfo;
 RTC_DATA_ATTR bool rtc_valid = false; // if NTP is synced, set to true
 RTC_DATA_ATTR int previousDay = 0;   // for once per day operations
 
-int currentHour = 0;
 int timeToSleepSecs = 0;
 
 // Soil moisture variables
@@ -227,7 +225,10 @@ void setup(){
       FirebaseJson fbJson;  // json object for interacting with RTDB
       fbJson.add("moisture", moistureValue);
       fbJson.add("pump_on_seconds", pumpOnSeconds);
-      fbJson.add("ts", rtc.getEpoch());
+
+      time_t epoch;
+      time(&epoch);   // get Epoch timestamp
+      fbJson.add("ts", epoch);
 
       if (Firebase.RTDB.pushJSON(&fbdo, fbPath, &fbJson)) {
         // success
@@ -242,7 +243,7 @@ void setup(){
       }
 
       // Check for firmware updates once a day
-      int currentDay = rtc.getDay();
+      int currentDay = timeinfo.tm_mday;
       if (currentDay != previousDay) {
         previousDay = currentDay;
         check_firmware_update();
@@ -267,12 +268,11 @@ void setup(){
     WiFi.mode(WIFI_OFF);
 #ifdef DEBUG_LOG
     Serial.println("WiFi disconnected");
-    Serial.println(rtc.getTime());
 #endif
   }
 
   // Between 9pm to 8am, do nothing
-  currentHour = rtc.getHour(true);  // true for 24hr format
+  unsigned int currentHour = timeinfo.tm_hour;  // already in 24-hr format
 #ifdef DEBUG_LOG
   Serial.println("Current hour: " + String(currentHour));
 #endif
@@ -282,9 +282,9 @@ void setup(){
 #else
   // Could be triggered between 2100 to 2159
   if (rtc_valid == true && currentHour > 20) {
-    timeToSleepSecs = (32 - currentHour) * 3600 - rtc.getMinute() * 60; // 24 - currentHour + 8
+    timeToSleepSecs = (32 - currentHour) * 3600 - timeinfo.tm_min * 60; // 24 - currentHour + 8
   } else if (rtc_valid == true && currentHour < 8) {
-    timeToSleepSecs = (8 - currentHour) * 3600 - rtc.getMinute() * 60;
+    timeToSleepSecs = (8 - currentHour) * 3600 - timeinfo.tm_min * 60;
   } else {
     timeToSleepSecs = TIME_TO_SLEEP;
   }
@@ -457,7 +457,6 @@ void enterDeepSleep(int sleep_secs){
 
 
 void printLocalTime(){
-  struct tm timeinfo;
   if(!getLocalTime(&timeinfo)){
 #ifdef DEBUG_LOG
     Serial.println("Failed to obtain time");
