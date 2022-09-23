@@ -222,7 +222,7 @@ void setup(){
       fbPath += fbauth.token.uid.c_str();
       fbPath += "/devices/";
       fbPath += DEVICE_ID;
-      fbPath += "/data";
+      String fbPathData = fbPath + "/data";
 
       FirebaseJson fbJson;  // json object for interacting with RTDB
       fbJson.add("moisture", moistureValue);
@@ -232,7 +232,7 @@ void setup(){
       time(&epoch);   // get Epoch timestamp
       fbJson.add("ts", epoch);
 
-      if (Firebase.RTDB.pushJSON(&fbdo, fbPath, &fbJson)) {
+      if (Firebase.RTDB.pushJSON(&fbdo, fbPathData, &fbJson)) {
         // success
         updateSuccess = true;
 #ifdef DEBUG_LOG
