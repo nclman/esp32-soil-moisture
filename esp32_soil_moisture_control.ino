@@ -99,6 +99,8 @@ const int pumpPin = 5;        // GPIO out pin to control water pump
 int moistureValue = 0;  // ADC reading
 int pumpOnSeconds = 0;  // variable to count pump time
 
+bool updateSuccess = false;
+
 // End soil moisture variables
 
 /*
@@ -232,6 +234,7 @@ void setup(){
 
       if (Firebase.RTDB.pushJSON(&fbdo, fbPath, &fbJson)) {
         // success
+        updateSuccess = true;
 #ifdef DEBUG_LOG
         Serial.println("pushJson successful");
 #endif
@@ -285,8 +288,10 @@ void setup(){
     timeToSleepSecs = (32 - currentHour) * 3600 - timeinfo.tm_min * 60; // 24 - currentHour + 8
   } else if (rtc_valid == true && currentHour < 8) {
     timeToSleepSecs = (8 - currentHour) * 3600 - timeinfo.tm_min * 60;
-  } else {
+  } else if (updateSuccess == true) {
     timeToSleepSecs = TIME_TO_SLEEP;
+  } else {
+    timeToSleepSecs = 60; // if update did not happen due to network, try again soon
   }
 #endif
 
