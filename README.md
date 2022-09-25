@@ -11,7 +11,7 @@ If you want to make your device cordless:
   - 5-6V solar panel
   - 5V - 3.3V step down module (3.3V for ESP32-S2-Mini power supply)
 
-The device is WiFi-enabled and it can send logs to your Firebase Realtime Database periodically
+The device is WiFi-enabled and it can send logs to your Firebase Realtime Database periodically. Once a day, it also checks the RTDB for firmware updates, and then performs the download+update if available.
 
 ## Prerequisites
 ### Hardware
@@ -26,7 +26,6 @@ The device is WiFi-enabled and it can send logs to your Firebase Realtime Databa
 - Arduino libraries:
   - "Firebase_Arduino_Client_Library_for_ESP8266_and_ESP32"
   - "FirebaseJson"
-  - "ESP32Time"
   
 ### Others
 - Google Firebase RealTime Database (Refer to Arduino examples for ESP32)
@@ -42,6 +41,7 @@ There is nothing in this Arduino sketch that is peculiar to ESP32-S2-Mini. So, i
 ### Pin Configuration
 - ADC (for reading soil moisture level from soil moisture sensor)
 - GPIO output pin (for on/off 5v water pump)
+  - connected to the "base" of transistor for switching water pump on/off.
 - GPIO output pin (for supplying ~5.55mA @3.3v to soil moisture sensor. This allows for power-saving as we can switch off the soil moisture sensor when necessary)
 
 ### 3.3v & 5v Power Supply
@@ -49,14 +49,21 @@ TODO:
 
 ### Google Firebase
 Having a cloud database for this project has several benefits:
-1. Check on your device anytime, anywhere
-2. Firmware update OTA
+- Check on your device anytime, anywhere
+- Firmware update OTA
   - Have the device pull update file from the cloud database (future update)
-3. Set parameters on your device, remotely
-4. Data from multiple devices in one cloud location
-5. Your devices don't need to be running all the time. They can sleep and poll the database whenever to conserve power
-6. All the above means we can build a mobile and/or web app to manage all devices after deployment
-7. And of course, we get to learn about Firebase!
+- Set parameters on your device, remotely
+- Data from multiple devices in one cloud location
+- Your devices don't need to be running all the time. They can sleep and poll the database whenever to conserve power
+- All the above means we can build a mobile and/or web app to manage all devices after deployment
+- And of course, we get to learn about Firebase!
 
 There are many articles, videos, that already cover Google Firebase and how to get started, so I will not be going into those details.
 Here, I used Firebase's Real-Time Database for telemetry data storage, and Cloud Storage for holding firmware binary files for OTA update.
+
+What's needed:
+- RealTime Database
+- Email/Password Authentication
+  - Create an account in the Firebase console
+- Cloud Storage
+  - To store firmware binaries for OTA updates.
