@@ -422,7 +422,6 @@ bool Fb_init() {
 void enterDeepSleep(int sleep_secs){
   /*
   Configure the wake up source
-  We set our ESP32 to wake up every 5 seconds
   */
   esp_sleep_enable_timer_wakeup(sleep_secs * uS_TO_S_FACTOR);
 #ifdef DEBUG_LOG
@@ -431,28 +430,6 @@ void enterDeepSleep(int sleep_secs){
   " Seconds");
 #endif
 
-  /*
-  Next we decide what all peripherals to shut down/keep on
-  By default, ESP32 will automatically power down the peripherals
-  not needed by the wakeup source, but if you want to be a poweruser
-  this is for you. Read in detail at the API docs
-  http://esp-idf.readthedocs.io/en/latest/api-reference/system/deep_sleep.html
-  Left the line commented as an example of how to configure peripherals.
-  The line below turns off all RTC peripherals in deep sleep.
-  */
-  esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
-#ifdef DEBUG_LOG
-  Serial.println("Configured all RTC Peripherals to be powered down in sleep");
-#endif
-
-  /*
-  Now that we have setup a wake cause and if needed setup the
-  peripherals state in deep sleep, we can now start going to
-  deep sleep.
-  In the case that no wake up sources were provided but deep
-  sleep was started, it will sleep forever unless hardware
-  reset occurs.
-  */
 #ifdef DEBUG_LOG
   Serial.println("Going to sleep now");
   Serial.flush();
