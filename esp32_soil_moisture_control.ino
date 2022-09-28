@@ -88,12 +88,12 @@ const long  gmtOffset_sec = 8*3600;   // GMT+8
 const int   daylightOffset_sec = 0;
 
 // Persistent data across deep sleep
-RTC_DATA_ATTR struct tm timeinfo;
 RTC_DATA_ATTR bool rtc_valid = false; // if NTP is synced, set to true
 RTC_DATA_ATTR bool first_boot = true;
 RTC_DATA_ATTR int previousDay = 0;   // for once per day operations
 RTC_DATA_ATTR int pumpOnSecsStored = 0; // store until it is sent
 
+struct tm timeinfo;
 int timeToSleepSecs = 0;
 
 // Soil moisture variables
@@ -223,7 +223,6 @@ void setup(){
       fbPath += fbauth.token.uid.c_str();
       fbPath += "/devices/";
       fbPath += DEVICE_ID;
-      String fbPathData = fbPath + "/data";
 
       FirebaseJson fbJson;  // json object for interacting with RTDB
       fbJson.add("moisture", moistureValue);
@@ -233,7 +232,7 @@ void setup(){
       time(&epoch);   // get Epoch timestamp
       fbJson.add("ts", epoch);
 
-      if (Firebase.RTDB.pushJSON(&fbdo, fbPathData, &fbJson)) {
+      if (Firebase.RTDB.pushJSON(&fbdo, fbPath + "/data", &fbJson)) {
         // success
         updateSuccess = true;
         pumpOnSecsStored = 0;   // reset after successfully sent
@@ -244,13 +243,13 @@ void setup(){
       }
 
       // Check for firmware updates once a day
-      int currentDay = timeinfo.tm_mday;
+      const int currentDay = timeinfo.tm_mday;
       if (currentDay != previousDay) {
         previousDay = currentDay;
         check_firmware_update();
 
-        String fbPathVersion = fbPath + "/version";
-        String current = String(MAJOR_VERSION) + "." + String(MINOR_VERSION) + "." + String(MICRO_VERSION);
+        const String fbPathVersion = fbPath + "/version";
+        const String current = String(MAJOR_VERSION) + "." + String(MINOR_VERSION) + "." + String(MICRO_VERSION);
         if (Firebase.RTDB.getString(&fbdo, fbPathVersion) == true) {
           if (current != fbdo.to<String>()) {
             Firebase.RTDB.setString(&fbdo, fbPathVersion, current);
@@ -274,7 +273,7 @@ void setup(){
   }
 
   // Between 9pm to 8am, do nothing
-  unsigned int currentHour = timeinfo.tm_hour;  // already in 24-hr format
+  const unsigned int currentHour = timeinfo.tm_hour;  // already in 24-hr format
   LOG("Current hour: " + String(currentHour));
 
 #ifdef DEBUG_LOG
@@ -303,7 +302,7 @@ void loop(){
 }
 
 void check_config_update(String &path, const char* key) {
-  int value = preferences.getInt(key, 0);
+  const int value = preferences.getInt(key, 0);
 
   if (Firebase.RTDB.getInt(&fbdo, path) == true) {
     if (value != fbdo.to<int>()) {
@@ -318,11 +317,11 @@ void check_firmware_update() {
   String path = F("/firmware/DEVICE_ID/latest");
   if (Firebase.RTDB.getString(&fbdo, path) == true) {
     // compare to our current version
-    String fwversion = fbdo.to<String>();
+    const String fwversion = fbdo.to<String>();
 
-    int major = fwversion.substring(0, fwversion.indexOf('.') - 1).toInt();
-    int minor = fwversion.substring(fwversion.indexOf('.') + 1, fwversion.lastIndexOf('.') - 1).toInt();
-    int micro = fwversion.substring(fwversion.lastIndexOf('.') + 1).toInt();
+    const int major = fwversion.substring(0, fwversion.indexOf('.') - 1).toInt();
+    const int minor = fwversion.substring(fwversion.indexOf('.') + 1, fwversion.lastIndexOf('.') - 1).toInt();
+    const int micro = fwversion.substring(fwversion.lastIndexOf('.') + 1).toInt();
 
     LOG("current version: " + String(MAJOR_VERSION) + "." + String(MINOR_VERSION) + "." + String(MICRO_VERSION));
     LOG("latest version: " + fwversion);
@@ -340,10 +339,10 @@ void check_firmware_update() {
         http.begin(fbdo.to<String>());
         if (http.GET() > 0) {
           // Check that we have enough space for the new binary.
-          int contentLen = http.getSize();
+          const int contentLen = http.getSize();
           LOG("Content-Length: " + String(contentLen));
 
-          bool canBegin = Update.begin(contentLen);
+          const bool canBegin = Update.begin(contentLen);
           if (!canBegin) {
             LOG(F("Not enough space to begin OTA"));
             return;
@@ -351,7 +350,7 @@ void check_firmware_update() {
 
           // Write the HTTP stream to the Update library.
           WiFiClient* client = http.getStreamPtr();
-          size_t written = Update.writeStream(*client);
+          const size_t written = Update.writeStream(*client);
 #ifdef DEBUG_LOG
           Serial.printf("OTA: %d/%d bytes written.\n", written, contentLen);
 #endif
