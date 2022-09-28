@@ -55,7 +55,7 @@ Nickleman <nclman77@gmail.com>
 #define DEVICE_ID   preferences.getString("id", "")
 
 #define uS_TO_S_FACTOR 1000000ULL  /* Conversion factor for micro seconds to seconds */
-#define TIME_TO_SLEEP  20*60        /* Time ESP32 will go to sleep (in seconds) */
+#define TIME_TO_SLEEP  preferences.getInt("wake_period", 0) /* Time ESP32 will go to sleep (in seconds) */
 
 Preferences preferences;
 
@@ -89,9 +89,9 @@ RTC_DATA_ATTR int previousDay = 0;   // for once per day operations
 int timeToSleepSecs = 0;
 
 // Soil moisture variables
-#define ADC_DRY_VALUE 5500  // ADC high if dry
-#define ADC_WET_VALUE 4000  // ADC low if wet
-#define PUMP_ON_SECONDS_MAX 3*60  // 3 minutes max
+#define ADC_DRY_VALUE preferences.getInt("moist_dry", 0) // ADC high if dry
+#define ADC_WET_VALUE preferences.getInt("moist_wet", 0) // ADC low if wet
+#define PUMP_ON_SECONDS_MAX 1*60  // 1 minutes max
 
 const int moisturePowerPin = 9;	// GPIO out pin to supply power to soil moisture sensor (~5mA)
 const int moistureAdcPin = 7;    // ADC pin location for moisture sensor (labeled '7' on board)
@@ -260,11 +260,14 @@ void setup(){
         } else {
           Firebase.RTDB.setString(&fbdo, fbPathVersion, current);
         }
+
+        // check config updates
+        check_config_update(fbPath + "/threshold_max", "moist_dry");
+        check_config_update(fbPath + "/threshold_min", "moist_wet");
+        check_config_update(fbPath + "/wake_period", "wake_period");
       }
       // How to exit Firebase cleanly?
     }
-
-    preferences.end();
 
     // Disconnnect WiFi
     WiFi.disconnect(true);
@@ -295,6 +298,8 @@ void setup(){
   }
 #endif
 
+  preferences.end();
+
   enterDeepSleep(timeToSleepSecs);
 #ifdef DEBUG_LOG
   Serial.println("This will never be printed");
@@ -303,6 +308,18 @@ void setup(){
 
 void loop(){
   //This is not going to be called
+}
+
+void check_config_update(String &path, const char* key) {
+  int value = preferences.getInt(key, 0);
+
+  if (Firebase.RTDB.getInt(&fbdo, path) == true) {
+    if (value != fbdo.to<int>()) {
+      preferences.putInt(key, value);
+    }
+  } else {
+    Firebase.RTDB.setInt(&fbdo, path, value);
+  }
 }
 
 void check_firmware_update() {

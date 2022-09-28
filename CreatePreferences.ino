@@ -16,6 +16,9 @@ Preferences preferences;
 #define USER_EMAIL "email@email.com"
 #define USER_PASSWORD "password"
 
+#define ADC_DRY_VALUE 3100  // ADC high if dry
+#define ADC_WET_VALUE 2850  // ADC low if wet
+
 void setup() {
   Serial.begin(115200);
   delay(1000);
@@ -30,6 +33,10 @@ void setup() {
   preferences.putString("rtdb_url", RTDB_URL);
   preferences.putString("fb_email", USER_EMAIL);
   preferences.putString("fb_password", USER_PASSWORD);
+
+  preferences.putInt("moist_dry", ADC_DRY_VALUE);
+  preferences.putInt("moist_wet", ADC_WET_VALUE);
+  preferences.putInt("wake_period", 10*60);
 
   preferences.end();
 
