@@ -52,6 +52,12 @@ Nickleman <nclman77@gmail.com>
 #undef DEBUG_LOG
 #define DEBUG_LOG 1
 
+#ifdef DEBUG_LOG
+#define LOG(x)   Serial.println(x)
+#else
+#define LOG(x)
+#endif
+
 #define DEVICE_ID   preferences.getString("id", "")
 
 #define uS_TO_S_FACTOR 1000000ULL  /* Conversion factor for micro seconds to seconds */
@@ -117,19 +123,14 @@ void process_wakeup_reason(){
     //case ESP_SLEEP_WAKEUP_EXT0 : Serial.println("Wakeup caused by external signal using RTC_IO"); break;
     //case ESP_SLEEP_WAKEUP_EXT1 : Serial.println("Wakeup caused by external signal using RTC_CNTL"); break;
     case ESP_SLEEP_WAKEUP_TIMER :
-#ifdef DEBUG_LOG
-      Serial.println("Wakeup caused by timer");
-#endif
+      LOG(F("Wakeup caused by timer"));
       break;
     //case ESP_SLEEP_WAKEUP_TOUCHPAD : Serial.println("Wakeup caused by touchpad"); break;
     //case ESP_SLEEP_WAKEUP_ULP : Serial.println("Wakeup caused by ULP program"); break;
     default :
-#ifdef DEBUG_LOG
-      Serial.printf("Wakeup was not caused by deep sleep: %d\n",wakeup_reason);
-#else
+      LOG("Wakeup was not caused by deep sleep: " + String(wakeup_reason));
       // If battery was drained for some reason, avoid normal op to allow solar panel to charge battery
       enterDeepSleep(TIME_TO_SLEEP);
-#endif
       break;
   }
 }
@@ -155,32 +156,24 @@ void setup(){
   delay(3);	// allow some time for reading to stabilize
 
   moistureValue = analogRead(moistureAdcPin);  // Read moisture level
-#ifdef DEBUG_LOG
-  Serial.println("Moisture: " + String(moistureValue));
-#endif
+  LOG("Moisture: " + String(moistureValue));
 
   if (moistureValue > ADC_DRY_VALUE) {
     // Soil is dry. Process...
     digitalWrite(pumpPin, HIGH);  // Switch on water pump
-#ifdef DEBUG_LOG
-    Serial.println("Pump On");
-#endif
+    LOG(F("Pump On"));
 
     // wait x minutes or until moisture level is high
     while (moistureValue > ADC_WET_VALUE && pumpOnSeconds < PUMP_ON_SECONDS_MAX) {
       delay(1000); // check every 10 seconds
       pumpOnSeconds++;  // countdown
       moistureValue = analogRead(moistureAdcPin);
-#ifdef DEBUG_LOG
-      Serial.println("Moisture: " + String(moistureValue) + " Time lapsed: " + String(pumpOnSeconds));
-#endif
+      LOG("Moisture: " + String(moistureValue) + " Time lapsed: " + String(pumpOnSeconds));
     }
 
     // Soil is wet or timed-out
     digitalWrite(pumpPin, LOW);
-#ifdef DEBUG_LOG
-    Serial.println("Pump Off");
-#endif
+    LOG(F("Pump Off"));
   }
 
   // Power down moisture sensor
@@ -204,10 +197,8 @@ void setup(){
 #endif
   }
 
-#ifdef DEBUG_LOG
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
-#endif
+  LOG(F("IP address: "));
+  LOG(WiFi.localIP());
 
   // Sync RTC clock if network is connected
   if (WiFi.status() == WL_CONNECTED) {
@@ -235,14 +226,10 @@ void setup(){
       if (Firebase.RTDB.pushJSON(&fbdo, fbPathData, &fbJson)) {
         // success
         updateSuccess = true;
-#ifdef DEBUG_LOG
-        Serial.println("pushJson successful");
-#endif
+        LOG(F("pushJson successful"));
       } else {
         // failure
-#ifdef DEBUG_LOG
-        Serial.println("pushJson failed");
-#endif
+        LOG(F("pushJson failed"));
       }
 
       // Check for firmware updates once a day
@@ -272,16 +259,12 @@ void setup(){
     // Disconnnect WiFi
     WiFi.disconnect(true);
     WiFi.mode(WIFI_OFF);
-#ifdef DEBUG_LOG
-    Serial.println("WiFi disconnected");
-#endif
+    LOG(F("WiFi disconnected"));
   }
 
   // Between 9pm to 8am, do nothing
   unsigned int currentHour = timeinfo.tm_hour;  // already in 24-hr format
-#ifdef DEBUG_LOG
-  Serial.println("Current hour: " + String(currentHour));
-#endif
+  LOG("Current hour: " + String(currentHour));
 
 #ifdef DEBUG_LOG
   timeToSleepSecs = 5;
@@ -301,9 +284,7 @@ void setup(){
   preferences.end();
 
   enterDeepSleep(timeToSleepSecs);
-#ifdef DEBUG_LOG
-  Serial.println("This will never be printed");
-#endif
+  LOG(F("This will never be printed"));
 }
 
 void loop(){
@@ -332,10 +313,8 @@ void check_firmware_update() {
     int minor = fwversion.substring(fwversion.indexOf('.') + 1, fwversion.lastIndexOf('.') - 1).toInt();
     int micro = fwversion.substring(fwversion.lastIndexOf('.') + 1).toInt();
 
-#ifdef DEBUG_LOG
-    Serial.println("current version: " + String(MAJOR_VERSION) + "." + String(MINOR_VERSION) + "." + String(MICRO_VERSION));
-    Serial.println("latest version: " + fwversion);
-#endif
+    LOG("current version: " + String(MAJOR_VERSION) + "." + String(MINOR_VERSION) + "." + String(MICRO_VERSION));
+    LOG("latest version: " + fwversion);
 
     if (major > MAJOR_VERSION ||
        (major == MAJOR_VERSION && minor > MINOR_VERSION) ||
@@ -344,22 +323,18 @@ void check_firmware_update() {
       path = F("/firmware/DEVICE_ID/url");
 
       if (Firebase.RTDB.getString(&fbdo, path) == true) {
- #ifdef DEBUG_LOG
-        Serial.println(fbdo.to<String>());
- #endif
+        LOG(fbdo.to<String>());
+
         HTTPClient http;
         http.begin(fbdo.to<String>());
         if (http.GET() > 0) {
           // Check that we have enough space for the new binary.
           int contentLen = http.getSize();
-#ifdef DEBUG_LOG
-          Serial.printf("Content-Length: %d\n", contentLen);
-#endif
+          LOG("Content-Length: " + String(contentLen));
+
           bool canBegin = Update.begin(contentLen);
           if (!canBegin) {
-#ifdef DEBUG_LOG
-            Serial.println(F("Not enough space to begin OTA"));
-#endif
+            LOG(F("Not enough space to begin OTA"));
             return;
           }
 
@@ -370,40 +345,28 @@ void check_firmware_update() {
           Serial.printf("OTA: %d/%d bytes written.\n", written, contentLen);
 #endif
           if (written != contentLen) {
-#ifdef DEBUG_LOG
-            Serial.println(F("Wrote partial binary. Giving up."));
-#endif
+            LOG(F("Wrote partial binary. Giving up."));
             return;
           }
 
           if (!Update.end()) {
-#ifdef DEBUG_LOG
-            Serial.println("Error from Update.end(): " + 
-              String(Update.getError()));
-#endif
+            LOG("Error from Update.end(): " + String(Update.getError()));
             return;
           }
 
           if (Update.isFinished()) {
-#ifdef DEBUG_LOG
-            Serial.println(F("Update successfully completed. Rebooting."));
-#endif
+            LOG(F("Update successfully completed. Rebooting."));
             // This line is specific to the ESP32 platform:
             ESP.restart();
           } else {
-#ifdef DEBUG_LOG
-            Serial.println("Error from Update.isFinished(): " + 
-                String(Update.getError()));
-#endif
+            LOG("Error from Update.isFinished(): " + String(Update.getError()));
             return;
           }
         }
       }
     }
   } else {
-#ifdef DEBUG_LOG
-    Serial.println(F("Failed to get latest firmware version"));
-#endif
+    LOG(F("Failed to get latest firmware version"));
   }
 }
 
@@ -417,15 +380,6 @@ bool Fb_init() {
 
   fbauth.user.email = USER_EMAIL;
   fbauth.user.password = USER_PASSWORD;
-
-  /* Sign in */
-  /*if (Firebase.signUp(&fbconfig, &fbauth, "", "")){
-    Serial.println("Firebase signin ok");
-  }
-  else{
-    Serial.printf("%s\n", fbconfig.signer.signupError.message.c_str());
-    return false;
-  }*/
 
   /* Assign the callback function for the long running token generation task */
   fbconfig.token_status_callback = tokenStatusCallback; //see addons/TokenHelper.h
@@ -441,14 +395,12 @@ void enterDeepSleep(int sleep_secs){
   Configure the wake up source
   */
   esp_sleep_enable_timer_wakeup(sleep_secs * uS_TO_S_FACTOR);
-#ifdef DEBUG_LOG
-  Serial.println("RTC valid: " + String(rtc_valid));
-  Serial.println("Setup ESP32 to sleep for every " + String(sleep_secs) +
-  " Seconds");
-#endif
 
+  LOG("RTC valid: " + String(rtc_valid));
+  LOG("Setup ESP32 to sleep for every " + String(sleep_secs) + " Seconds");
+
+  LOG(F("Going to sleep now"));
 #ifdef DEBUG_LOG
-  Serial.println("Going to sleep now");
   Serial.flush();
 #endif 
   esp_deep_sleep_start();
@@ -457,9 +409,7 @@ void enterDeepSleep(int sleep_secs){
 
 void printLocalTime(){
   if(!getLocalTime(&timeinfo)){
-#ifdef DEBUG_LOG
-    Serial.println("Failed to obtain time");
-#endif
+    LOG(F("Failed to obtain time"));
     return;
   }
 
