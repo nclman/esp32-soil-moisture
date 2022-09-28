@@ -92,6 +92,7 @@ RTC_DATA_ATTR struct tm timeinfo;
 RTC_DATA_ATTR bool rtc_valid = false; // if NTP is synced, set to true
 RTC_DATA_ATTR bool first_boot = true;
 RTC_DATA_ATTR int previousDay = 0;   // for once per day operations
+RTC_DATA_ATTR int pumpOnSecsStored = 0; // store until it is sent
 
 int timeToSleepSecs = 0;
 
@@ -177,6 +178,9 @@ void setup(){
       LOG("Moisture: " + String(moistureValue) + " Time lapsed: " + String(pumpOnSeconds));
     }
 
+    if (pumpOnSeconds > 0)
+      pumpOnSecsStored = pumpOnSeconds;
+
     // Soil is wet or timed-out
     digitalWrite(pumpPin, LOW);
     LOG(F("Pump Off"));
@@ -223,7 +227,7 @@ void setup(){
 
       FirebaseJson fbJson;  // json object for interacting with RTDB
       fbJson.add("moisture", moistureValue);
-      fbJson.add("pump_on_seconds", pumpOnSeconds);
+      fbJson.add("pump_on_seconds", (pumpOnSecsStored>0) ? pumpOnSecsStored : pumpOnSeconds);
 
       time_t epoch;
       time(&epoch);   // get Epoch timestamp
@@ -232,6 +236,7 @@ void setup(){
       if (Firebase.RTDB.pushJSON(&fbdo, fbPathData, &fbJson)) {
         // success
         updateSuccess = true;
+        pumpOnSecsStored = 0;   // reset after successfully sent
         LOG(F("pushJson successful"));
       } else {
         // failure
