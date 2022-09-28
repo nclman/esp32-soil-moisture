@@ -90,6 +90,7 @@ const int   daylightOffset_sec = 0;
 // Persistent data across deep sleep
 RTC_DATA_ATTR struct tm timeinfo;
 RTC_DATA_ATTR bool rtc_valid = false; // if NTP is synced, set to true
+RTC_DATA_ATTR bool first_boot = true;
 RTC_DATA_ATTR int previousDay = 0;   // for once per day operations
 
 int timeToSleepSecs = 0;
@@ -129,8 +130,13 @@ void process_wakeup_reason(){
     //case ESP_SLEEP_WAKEUP_ULP : Serial.println("Wakeup caused by ULP program"); break;
     default :
       LOG("Wakeup was not caused by deep sleep: " + String(wakeup_reason));
-      // If battery was drained for some reason, avoid normal op to allow solar panel to charge battery
-      enterDeepSleep(TIME_TO_SLEEP);
+#ifndef DEBUG_LOG
+      if (first_boot == false) {
+        enterDeepSleep(TIME_TO_SLEEP);
+      } else {
+        first_boot = false;
+      }
+#endif
       break;
   }
 }
