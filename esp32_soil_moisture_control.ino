@@ -94,7 +94,7 @@ RTC_DATA_ATTR int previousDay = 0;   // for once per day operations
 RTC_DATA_ATTR int pumpOnSecsStored = 0; // store until it is sent
 
 struct tm timeinfo;
-int timeToSleepSecs = 0;
+unsigned int timeToSleepSecs = 0;
 
 // Soil moisture variables
 #define ADC_DRY_VALUE preferences.getInt("moist_dry", 0) // ADC high if dry
@@ -293,7 +293,7 @@ void setup(){
 
   preferences.end();
 
-  enterDeepSleep(timeToSleepSecs);
+  enterDeepSleep((uint64_t)timeToSleepSecs);
   LOG(F("This will never be printed"));
 }
 
@@ -400,7 +400,7 @@ bool Fb_init() {
   return true;
 }
 
-void enterDeepSleep(int sleep_secs){
+void enterDeepSleep(uint64_t sleep_secs){
   /*
   Configure the wake up source
   */
