@@ -152,8 +152,10 @@ void setup(){
 
   // Our soil moisture processing here
   // rtc_gpio_isolate() will hold the pins. Unhold them after wake
+#ifndef CONFIG_IDF_TARGET_ESP32C3
   rtc_gpio_hold_dis(GPIO_NUM_9);
   rtc_gpio_hold_dis(GPIO_NUM_5);
+#endif
 
   pinMode(moisturePowerPin, OUTPUT);
   pinMode(pumpPin, OUTPUT); // configure pin(s)
@@ -190,8 +192,10 @@ void setup(){
   digitalWrite(moisturePowerPin, LOW);
 
   // Isolate GPIO output to save power during deep sleep
+#ifndef CONFIG_IDF_TARGET_ESP32C3
   rtc_gpio_isolate(GPIO_NUM_5);	// pumpPin
   rtc_gpio_isolate(GPIO_NUM_9);	// moisturePowerPin
+#endif
   // End soil moisture processing
 
   // Attempt connect to Wifi. Add a timeout
