@@ -61,7 +61,7 @@ Nickleman <nclman77@gmail.com>
 #define DEVICE_ID   preferences.getString("id", "")
 
 #define uS_TO_S_FACTOR 1000000ULL  /* Conversion factor for micro seconds to seconds */
-#define TIME_TO_SLEEP  preferences.getInt("wake_period", 0) /* Time ESP32 will go to sleep (in seconds) */
+#define TIME_TO_SLEEP  preferences.getInt("wake_period", 60) /* Time ESP32 will go to sleep (in seconds) */
 
 Preferences preferences;
 
@@ -97,8 +97,8 @@ struct tm timeinfo;
 unsigned int timeToSleepSecs = 0;
 
 // Soil moisture variables
-#define ADC_DRY_VALUE preferences.getInt("moist_dry", 0) // ADC high if dry
-#define ADC_WET_VALUE preferences.getInt("moist_wet", 0) // ADC low if wet
+#define ADC_DRY_VALUE preferences.getInt("moist_dry", 5000) // ADC high if dry
+#define ADC_WET_VALUE preferences.getInt("moist_wet", 2000) // ADC low if wet
 #define PUMP_ON_SECONDS_MAX 1*60  // 1 minutes max
 
 const int moisturePowerPin = 9;	// GPIO out pin to supply power to soil moisture sensor (~5mA)
@@ -405,6 +405,9 @@ bool Fb_init() {
 }
 
 void enterDeepSleep(uint64_t sleep_secs){
+
+  if (sleep_secs == 0) sleep_secs = 60; // prevent forever sleep
+
   /*
   Configure the wake up source
   */
@@ -432,21 +435,5 @@ void printLocalTime(){
 
 #ifdef DEBUG_LOG
   Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
-  Serial.print("Day of week: ");
-  Serial.println(&timeinfo, "%A");
-  Serial.print("Month: ");
-  Serial.println(&timeinfo, "%B");
-  Serial.print("Day of Month: ");
-  Serial.println(&timeinfo, "%d");
-  Serial.print("Year: ");
-  Serial.println(&timeinfo, "%Y");
-  Serial.print("Hour: ");
-  Serial.println(&timeinfo, "%H");
-  Serial.print("Hour (12 hour format): ");
-  Serial.println(&timeinfo, "%I");
-  Serial.print("Minute: ");
-  Serial.println(&timeinfo, "%M");
-  Serial.print("Second: ");
-  Serial.println(&timeinfo, "%S");
 #endif
 }
