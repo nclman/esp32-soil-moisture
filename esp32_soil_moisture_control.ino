@@ -89,7 +89,6 @@ const int   daylightOffset_sec = 0;
 
 // Persistent data across deep sleep
 RTC_DATA_ATTR bool first_boot = true;
-RTC_DATA_ATTR int previousDay = 0;   // for once per day operations
 RTC_DATA_ATTR int pumpOnSecsStored = 0; // store until it is sent
 
 bool rtc_valid = false; // if NTP is synced, set to true
@@ -246,12 +245,12 @@ void setup(){
         LOG(F("pushJson failed"));
       }
 
-      // Check for firmware updates once a day
-      const int currentDay = timeinfo.tm_mday;
-      if (currentDay != previousDay) {
-        previousDay = currentDay;
+      // check update flag for updates
+      if (Firebase.RTDB.getBool(&fbdo, fbPath + "/update") == true && fbdo.to<bool>() == true) {
+        // check firmware updates
         check_firmware_update();
 
+        // update database
         const String fbPathVersion = fbPath + "/version";
         const String current = String(MAJOR_VERSION) + "." + String(MINOR_VERSION) + "." + String(MICRO_VERSION);
         if (Firebase.RTDB.getString(&fbdo, fbPathVersion) == true) {
@@ -266,7 +265,11 @@ void setup(){
         check_config_update(fbPath + "/threshold_max", "moist_dry");
         check_config_update(fbPath + "/threshold_min", "moist_wet");
         check_config_update(fbPath + "/wake_period", "wake_period");
+
+        // reset update flag
+        Firebase.RTDB.setBool(&fbdo, fbPath + "/update", false);
       }
+
       // How to exit Firebase cleanly?
     }
 
