@@ -88,11 +88,11 @@ const long  gmtOffset_sec = 8*3600;   // GMT+8
 const int   daylightOffset_sec = 0;
 
 // Persistent data across deep sleep
-RTC_DATA_ATTR bool rtc_valid = false; // if NTP is synced, set to true
 RTC_DATA_ATTR bool first_boot = true;
 RTC_DATA_ATTR int previousDay = 0;   // for once per day operations
 RTC_DATA_ATTR int pumpOnSecsStored = 0; // store until it is sent
 
+bool rtc_valid = false; // if NTP is synced, set to true
 struct tm timeinfo;
 unsigned int timeToSleepSecs = 0;
 
