@@ -61,7 +61,7 @@ Nickleman <nclman77@gmail.com>
 #define DEVICE_ID   preferences.getString("id", "")
 
 #define uS_TO_S_FACTOR 1000000ULL  /* Conversion factor for micro seconds to seconds */
-#define TIME_TO_SLEEP  preferences.getInt("wake_period", 60) /* Time ESP32 will go to sleep (in seconds) */
+#define TIME_TO_SLEEP  preferences.getUInt("wake_period", 60) /* Time ESP32 will go to sleep (in seconds) */
 
 Preferences preferences;
 
@@ -89,22 +89,22 @@ const int   daylightOffset_sec = 0;
 
 // Persistent data across deep sleep
 RTC_DATA_ATTR bool first_boot = true;
-RTC_DATA_ATTR int pumpOnSecsStored = 0; // store until it is sent
+RTC_DATA_ATTR unsigned int pumpOnSecsStored = 0; // store until it is sent
 
 bool rtc_valid = false; // if NTP is synced, set to true
 struct tm timeinfo;
 unsigned int timeToSleepSecs = 0;
 
 // Soil moisture variables
-#define ADC_DRY_VALUE preferences.getInt("moist_dry", 5000) // ADC high if dry
-#define ADC_WET_VALUE preferences.getInt("moist_wet", 2000) // ADC low if wet
+#define ADC_DRY_VALUE preferences.getUInt("moist_dry", 5000) // ADC high if dry
+#define ADC_WET_VALUE preferences.getUInt("moist_wet", 2000) // ADC low if wet
 #define PUMP_ON_SECONDS_MAX 1*60  // 1 minutes max
 
 const int moisturePowerPin = 9;	// GPIO out pin to supply power to soil moisture sensor (~5mA)
 const int moistureAdcPin = 7;    // ADC pin location for moisture sensor (labeled '7' on board)
 const int pumpPin = 5;        // GPIO out pin to control water pump
-int moistureValue = 0;  // ADC reading
-int pumpOnSeconds = 0;  // variable to count pump time
+unsigned int moistureValue = 0;  // ADC reading
+unsigned int pumpOnSeconds = 0;  // variable to count pump time
 
 bool updateSuccess = false;
 
@@ -309,11 +309,13 @@ void loop(){
 }
 
 void check_config_update(String &path, const char* key) {
-  const int value = preferences.getInt(key, 0);
+  const unsigned int value = preferences.getUInt(key, 0);
+
+  if (value == 0) return;
 
   if (Firebase.RTDB.getInt(&fbdo, path) == true) {
-    if (value != fbdo.to<int>()) {
-      preferences.putInt(key, value);
+    if (value != fbdo.to<unsigned int>()) {
+      preferences.putUInt(key, fbdo.to<unsigned int>);
     }
   } else {
     Firebase.RTDB.setInt(&fbdo, path, value);
