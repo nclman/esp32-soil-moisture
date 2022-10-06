@@ -11,11 +11,11 @@ If you want to make your device cordless:
   - 5-6V solar panel
   - 5V - 3.3V step down module (3.3V for ESP32-S2-Mini power supply)
 
-The device is WiFi-enabled and it can send logs to your Firebase Realtime Database periodically. Once a day, it also checks the RTDB for firmware updates, and then performs the download+update if available.
+The device is WiFi-enabled and it can send logs to your Firebase Realtime Database periodically. It also checks the RTDB for firmware & config updates, and then performs the download+update if available.
 
 ## Prerequisites
 ### Hardware
-- ESP32-S2-Mini or any ESP32-based devkit should work
+- ESP32-S2-Mini, ESP32-C3-Mini or any ESP32-based devkit should work
 - USB connection to your host computer
 - WiFi connectivity
 
@@ -43,6 +43,7 @@ There is nothing in this Arduino sketch that is peculiar to ESP32-S2-Mini. So, i
 - GPIO output pin (for on/off 5v water pump)
   - connected to the "base" of transistor for switching water pump on/off.
 - GPIO output pin (for supplying ~5.55mA @3.3v to soil moisture sensor. This allows for power-saving as we can switch off the soil moisture sensor when necessary)
+- TODO: ADC to monitor battery level
 
 ### 3.3v & 5v Power Supply
 TODO:
@@ -67,3 +68,14 @@ What's needed:
   - Create an account in the Firebase console
 - Cloud Storage
   - To store firmware binaries for OTA updates.
+  
+### Step 1: Create WiFi, Firebase credentials and config in "Preferences"
+ESP32 has an Espressif feature called "Preferences", which is basically a way of storing persistent data in the device's local filesystem. It's like a EEPROM equivalent for those who know what that is. I used this to abstract away customization from main code, which is important if you want multiple devices to use the same sketch.
+
+Simply modify "CreatePreferences.ino" with your credentials and Arduino upload to your device.
+
+### Step 2: Upload "esp_soil_moisture_control.ino"
+Select your ADC, GPIO pins and that should all the customization required (this should probably be in Preferences too, in future). Arduino upload to device and reset. This step will not overwrite your Preferences, so, not to worry.
+
+### Step 3: Check the device
+The "Mini" boards do not have a built-in LED and I did not want to add one to drain the battery unnecessarily. You can always enable "DEBUG_LOG" define flag and use the Serial Monitor in Arduino IDE to ensure that the device is running. Or you can also check your Firebase RTDB for new entries based on the sleep/wake period. 
