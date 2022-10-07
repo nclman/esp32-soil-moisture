@@ -24,8 +24,8 @@ The device is WiFi-enabled and it can send logs to your Firebase Realtime Databa
 - Arduino IDE
   - Install ESP32 boards package from "Boards Manager" in Arduino IDE
 - Arduino libraries:
-  - "Firebase_Arduino_Client_Library_for_ESP8266_and_ESP32"
-  - "FirebaseJson"
+  - **Firebase_Arduino_Client_Library_for_ESP8266_and_ESP32**
+  - **FirebaseJson**
   
 ### Others
 - Google Firebase RealTime Database (Refer to Arduino examples for ESP32)
@@ -48,6 +48,18 @@ There is nothing in this Arduino sketch that is peculiar to ESP32-S2-Mini. So, i
 ### 3.3v & 5v Power Supply
 TODO:
 
+### Wiring for Capacitive Soil Sensor
+This sensor requires 3 connections: VCC, GND, and VALUE pin.
+
+On the ESP32, I used a GPIO as output to supply the 3.3V VCC, and an ADC connected to VALUE. GND is connected to any ground; it does not have to be the GND of the ESP32 board. All these can be connected without resistors, diodes, etc.
+
+It should be noted that using 3.3V for the sensor is not ideal as the ADC digital range between "wet" and "dry" becomes quite small (~150 integer value). 5V is probably better, if available, although I did not try it.
+
+### Wiring for Water Pump
+The pump will require a higher power output than what a GPIO can provide, so I used a transistor and a GPIO output pin to switch it on/off.
+
+It is important to include a diode here to protect the transistor. Otherwise, you might find that your pump not working after awhile because the transistor is damaged.
+
 ### Google Firebase
 Having a cloud database for this project has several benefits:
 - Check on your device anytime, anywhere
@@ -62,7 +74,7 @@ Having a cloud database for this project has several benefits:
 There are many articles, videos, that already cover Google Firebase and how to get started, so I will not be going into those details.
 Here, I used Firebase's Real-Time Database for telemetry data storage, and Cloud Storage for holding firmware binary files for OTA update.
 
-What's needed:
+**What's needed:**
 - RealTime Database
 - Email/Password Authentication
   - Create an account in the Firebase console
@@ -78,4 +90,12 @@ Simply modify "CreatePreferences.ino" with your credentials and Arduino upload t
 Select your ADC, GPIO pins and that should all the customization required (this should probably be in Preferences too, in future). Arduino upload to device and reset. This step will not overwrite your Preferences, so, not to worry.
 
 ### Step 3: Check the device
-The "Mini" boards do not have a built-in LED and I did not want to add one to drain the battery unnecessarily. You can always enable "DEBUG_LOG" define flag and use the Serial Monitor in Arduino IDE to ensure that the device is running. Or you can also check your Firebase RTDB for new entries based on the sleep/wake period. 
+The "Mini" boards do not have a built-in LED and I did not want to add one to drain the battery unnecessarily. You can always enable "DEBUG_LOG" define flag and use the Serial Monitor in Arduino IDE to ensure that the device is running. Or you can also check your Firebase RTDB for new entries based on the sleep/wake period.
+
+## What's Next?
+- I might want to explore keeping everything within a local network. i.e. have a local server (could be a low-powered device, e.g. another ESP32 with SDcard, Raspberry Pi, etc) running and collecting data from multiple devices. 
+- Experiment with using 18650 battery shields instead of cobbled-together parts.
+- Port this code to ESP-IDF and optimize.
+- Add more features:
+  - battery monitoring
+  - water reservoir monitoring
