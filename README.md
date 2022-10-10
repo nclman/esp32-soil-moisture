@@ -92,6 +92,21 @@ Select your ADC, GPIO pins and that should all the customization required (this 
 ### Step 3: Check the device
 The "Mini" boards do not have a built-in LED and I did not want to add one to drain the battery unnecessarily. You can always enable "DEBUG_LOG" define flag and use the Serial Monitor in Arduino IDE to ensure that the device is running. Or you can also check your Firebase RTDB for new entries based on the sleep/wake period.
 
+### Step 4: Tuning your parameters
+You will most likely need to tweak your "dry" and "wet" thresholds, or even the sleep/wake period. To do this, you don't need to do a Arduino-upload. Just go to your Firebase RTDB, adjust the relevant values, and then set **"update"** to **"true"** (without quotes as it's a boolean value). When the device wakes up, it will check the "update" value, and update itself if "true". Once you see that the RTDB "update" is back to "false", it means that the device has updated itself with the new values.
+
+### Step 5: Firmware OTA
+You will need Firebase Cloud Storage for this.
+
+1. Export your sketch as binary from in Arduino IDE
+2. Upload the binary to your Firebase Cloud Storage and copy the URL with access token
+3. In your RTDB, create a pathname "/firmware/\<model id\>" where \<model id\> is a name you give to your family of devices. Under this path, create two key-value pairs:
+  - "latest" : "0.0.1"  - where "0.0.1" is a version number greater than what is currently on the device
+  - "url" : <url with access token>   - paste the value from (2).
+4. In your RTDB, set "update" to **true**
+
+When the device wakes up, it will check for OTA updates.
+
 ## What's Next?
 - I might want to explore keeping everything within a local network. i.e. have a local server (could be a low-powered device, e.g. another ESP32 with SDcard, Raspberry Pi, etc) running and collecting data from multiple devices. 
 - Experiment with using 18650 battery shields instead of cobbled-together parts.
@@ -99,3 +114,4 @@ The "Mini" boards do not have a built-in LED and I did not want to add one to dr
 - Add more features:
   - battery monitoring
   - water reservoir monitoring
+  - allow configuration of sleep schedule
