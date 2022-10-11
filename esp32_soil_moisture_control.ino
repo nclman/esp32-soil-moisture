@@ -147,6 +147,7 @@ void setup(){
   delay(1000); //Take some time to open up the Serial Monitor
 #endif
 
+  preferences.begin("device_info", false);   // read-write
   process_wakeup_reason();
 
   // Our soil moisture processing here
@@ -198,7 +199,6 @@ void setup(){
   // End soil moisture processing
 
   // Attempt connect to Wifi. Add a timeout
-  preferences.begin("device_info", true);   // read-only
   WiFi.begin(WIFI_SSID.c_str(), WIFI_PASSWORD.c_str());
 
   int wifiRetryCnt = 100;
@@ -315,7 +315,9 @@ void check_config_update(String &path, const char* key) {
 
   if (Firebase.RTDB.getInt(&fbdo, path) == true) {
     if (value != fbdo.to<unsigned int>()) {
-      preferences.putUInt(key, fbdo.to<unsigned int>);
+      if (preferences.putUInt(key, fbdo.to<unsigned int>) == 0) {
+        LOG(F("Config update failed"));
+      }
     }
   } else {
     Firebase.RTDB.setInt(&fbdo, path, value);
