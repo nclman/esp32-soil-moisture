@@ -64,7 +64,7 @@ It is important to include a diode here to protect the transistor. Otherwise, yo
 Having a cloud database for this project has several benefits:
 - Check on your device anytime, anywhere
 - Firmware update OTA
-  - Have the device pull update file from the cloud database (future update)
+  - Have the device pull update file from the cloud database
 - Set parameters on your device, remotely
 - Data from multiple devices in one cloud location
 - Your devices don't need to be running all the time. They can sleep and poll the database whenever to conserve power
@@ -84,7 +84,7 @@ Here, I used Firebase's Real-Time Database for telemetry data storage, and Cloud
 ### Step 1: Create WiFi, Firebase credentials and config in "Preferences"
 ESP32 has an Espressif feature called "Preferences", which is basically a way of storing persistent data in the device's local filesystem. It's like a EEPROM equivalent for those who know what that is. I used this to abstract away customization from main code, which is important if you want multiple devices to use the same sketch.
 
-Simply modify "CreatePreferences.ino" with your credentials and Arduino upload to your device.
+Simply modify "CreatePreferences.ino" with your credentials and Arduino-upload to your device.
 
 ### Step 2: Upload "esp_soil_moisture_control.ino"
 Select your ADC, GPIO pins and that should all the customization required (this should probably be in Preferences too, in future). Arduino upload to device and reset. This step will not overwrite your Preferences, so, not to worry.
@@ -101,7 +101,7 @@ You will need Firebase Cloud Storage for this.
 1. Export your sketch as binary from in Arduino IDE
 2. Upload the binary to your Firebase Cloud Storage and copy the URL with access token
 3. In your RTDB, create a pathname "/firmware/\<model id\>" where \<model id\> is a name you give to your family of devices. Under this path, create two key-value pairs:
-  - "latest" : "0.0.1"  - where "0.0.1" is a version number greater than what is currently on the device
+  - "latest" : "0.0.1"  - where "0.0.1" is a version number greater than what is currently on the device. This number must also match the version numbers in the binary.
   - "url" : <url with access token>   - paste the value from (2).
 4. In your RTDB, set "update" to **true**
 
@@ -110,6 +110,7 @@ When the device wakes up, it will check for OTA updates.
 ## What's Next?
 - I might want to explore keeping everything within a local network. i.e. have a local server (could be a low-powered device, e.g. another ESP32 with SDcard, Raspberry Pi, etc) running and collecting data from multiple devices. 
 - Experiment with using 18650 battery shields instead of cobbled-together parts.
+- Experiment with 3V relay module instead of transistor.
 - Port this code to ESP-IDF and optimize.
 - Add more features:
   - battery monitoring
