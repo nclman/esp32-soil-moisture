@@ -2,7 +2,11 @@
 This project is aimed to make a small (and hopefully, self-sustaining) automated plant watering device suitable for a single potted plant. But it should be easily scalable to multiple pots if so desired.
 The main hardware components are rather cheap and are all sourced online:
   - ESP32-S2-Mini
+
+    <img src="https://www.wemos.cc/en/latest/_static/boards/s2_mini_v1.0.0_1_16x16.jpg" width="150px">
   - Capacitive soil moisture sensor
+
+    <img src="https://aws1.discourse-cdn.com/arduino/original/4X/3/7/1/371d2a082793927e2574b5d2cfde7aa1e07ddb1e.jpeg" width="150px">
   - 5V DC water pump
 
 If you want to make your device cordless:
