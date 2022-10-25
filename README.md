@@ -62,8 +62,21 @@ It should be noted that using 3.3V for the sensor is not ideal as the ADC digita
 ## Waterproofing Capacitive Soil Sensor
 Whether your setup is indoors or outdoors, waterproofing the sensor is important, as there is risk of it getting wet. And once the electrical components get wet, you may find that the sensor reading goes way off.
 
-You can try following this article to waterproof your sensor:
+Unfortunately, I could not find off-the-shelf waterproof versions.
+
+You can try following this article to DIY waterproof your sensor:
 https://www.instructables.com/Waterproofing-a-Capacitance-Soil-Moisture-Sensor/
+
+## Selecting a Water Delivery System
+For this battery-powered project, there are several types of drippers, sprinklers, sprayers, etc.
+
+### Drip Stakes
+<img src="https://www.agrivi.com/wp-content/uploads/2017/06/wepik-2022416-135422.jpg" width="400px">
+These work well with a low-powered pump (like 5V version) since not much water pressure is required. The downside is that water is delivered to a very small area. So, this may not work well for bigger plants.
+
+### Sprinkler-type Drippers
+<img src="https://www.hayleysagriculture.com/ADMIN/images/sub_c/1571123105.jpg" width="400px">
+These can deliver water over a wider area. However, a 5V water pump will likely not be able to provide enough water pressure for the desired effect. 12V pumps should work better, especially if you intend to install multiple sprinklers.
 
 ## Wiring for Water Pump
 The pump will require a higher power output than what a GPIO can provide, so I used a transistor and a GPIO output pin to switch it on/off.
@@ -115,7 +128,7 @@ You will need Firebase Cloud Storage for this.
   - "url" : <url with access token>   - paste the value from (2).
 4. In your RTDB, set "update" to **true**
 
-When the device wakes up, it will check for OTA updates.
+When the device wakes up, it will check for OTA updates. Once the update is done, the device will set RTDB "update" value back to **false**
 
 ## What's Next?
 - I might want to explore keeping everything within a local network. i.e. have a local server (could be a low-powered device, e.g. another ESP32 with SDcard, Raspberry Pi, etc) running and collecting data from multiple devices. 
