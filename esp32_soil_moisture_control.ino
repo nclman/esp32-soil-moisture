@@ -150,6 +150,9 @@ void setup(){
   preferences.begin("device_info", false);   // read-write
   process_wakeup_reason();
 
+  // Initiate WiFi connection
+  WiFi.begin(WIFI_SSID.c_str(), WIFI_PASSWORD.c_str());
+
   // Our soil moisture processing here
   // rtc_gpio_isolate() will hold the pins. Unhold them after wake
 #ifndef CONFIG_IDF_TARGET_ESP32C3
@@ -204,9 +207,7 @@ void setup(){
 #endif
   // End soil moisture processing
 
-  // Attempt connect to Wifi. Add a timeout
-  WiFi.begin(WIFI_SSID.c_str(), WIFI_PASSWORD.c_str());
-
+  // Check WiFi status
   int wifiRetryCnt = 100;
   while (WiFi.status() != WL_CONNECTED && wifiRetryCnt > 0) {
     delay(100);
