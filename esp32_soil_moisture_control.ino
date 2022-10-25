@@ -241,6 +241,10 @@ void setup(){
       time(&epoch);   // get Epoch timestamp
       fbJson.add("ts", epoch);
 
+      if (pumpOnSecsStored > 0) {
+        Firebase.RTDB.setDouble(&fbdo, fbPath + "/last_pump_ts", epoch);
+      }
+
       if (Firebase.RTDB.pushJSON(&fbdo, fbPath + "/data", &fbJson)) {
         // success
         updateSuccess = true;
