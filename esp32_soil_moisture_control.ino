@@ -164,7 +164,13 @@ void setup(){
   digitalWrite(moisturePowerPin, HIGH);
   delay(3);	// allow some time for reading to stabilize
 
-  moistureValue = analogRead(moistureAdcPin);  // Read moisture level
+  // Take average of 4 readings
+  for (int count=0; count<4; count++) {
+    moistureValue += analogRead(moistureAdcPin);  // Read moisture level
+    delay(3);
+  }
+
+  moistureValue = moistureValue / 4;
   LOG("Moisture: " + String(moistureValue));
 
   if (moistureValue > ADC_DRY_VALUE) {
