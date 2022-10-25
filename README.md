@@ -42,29 +42,35 @@ It's also very easy to use with Arduino IDE.
 There is nothing in this Arduino sketch that is peculiar to ESP32-S2-Mini. So, it should work with other ESP32 hardware, maybe with a change of the pins used for ADC and GPIO output pin.
 
 # Set Up
-### Pin Configuration
+## Pin Configuration
 - ADC (for reading soil moisture level from soil moisture sensor)
 - GPIO output pin (for on/off 5v water pump)
   - connected to the "base" of transistor for switching water pump on/off.
 - GPIO output pin (for supplying ~5.55mA @3.3v to soil moisture sensor. This allows for power-saving as we can switch off the soil moisture sensor when necessary)
 - TODO: ADC to monitor battery level
 
-### 3.3v & 5v Power Supply
+## 3.3v & 5v Power Supply
 TODO:
 
-### Wiring for Capacitive Soil Sensor
+## Wiring for Capacitive Soil Sensor
 This sensor requires 3 connections: VCC, GND, and VALUE pin.
 
 On the ESP32, I used a GPIO as output to supply the 3.3V VCC, and an ADC connected to VALUE. GND is connected to any ground; it does not have to be the GND of the ESP32 board. All these can be connected without resistors, diodes, etc.
 
 It should be noted that using 3.3V for the sensor is not ideal as the ADC digital range between "wet" and "dry" becomes quite small (~150 integer value). 5V is probably better, if available, although I did not try it.
 
-### Wiring for Water Pump
+## Waterproofing Capacitive Soil Sensor
+Whether your setup is indoors or outdoors, waterproofing the sensor is important, as there is risk of it getting wet. And once the electrical components get wet, you may find that the sensor reading goes way off.
+
+You can try following this article to waterproof your sensor:
+https://www.instructables.com/Waterproofing-a-Capacitance-Soil-Moisture-Sensor/
+
+## Wiring for Water Pump
 The pump will require a higher power output than what a GPIO can provide, so I used a transistor and a GPIO output pin to switch it on/off.
 
 It is important to include a diode here to protect the transistor. Otherwise, you might find that your pump not working after awhile because the transistor is damaged.
 
-### Google Firebase
+## Google Firebase
 Having a cloud database for this project has several benefits:
 - Check on your device anytime, anywhere
 - Firmware update OTA
@@ -85,21 +91,21 @@ Here, I used Firebase's Real-Time Database for telemetry data storage, and Cloud
 - Cloud Storage
   - To store firmware binaries for OTA updates.
   
-### Step 1: Create WiFi, Firebase credentials and config in "Preferences"
+## Step 1: Create WiFi, Firebase credentials and config in "Preferences"
 ESP32 has an Espressif feature called "Preferences", which is basically a way of storing persistent data in the device's local filesystem. It's like a EEPROM equivalent for those who know what that is. I used this to abstract away customization from main code, which is important if you want multiple devices to use the same sketch.
 
 Simply modify "CreatePreferences.ino" with your credentials and Arduino-upload to your device.
 
-### Step 2: Upload "esp_soil_moisture_control.ino"
+## Step 2: Upload "esp_soil_moisture_control.ino"
 Select your ADC, GPIO pins and that should all the customization required (this should probably be in Preferences too, in future). Arduino upload to device and reset. This step will not overwrite your Preferences, so, not to worry.
 
-### Step 3: Check the device
+## Step 3: Check the device
 The "Mini" boards do not have a built-in LED and I did not want to add one to drain the battery unnecessarily. You can always enable "DEBUG_LOG" define flag and use the Serial Monitor in Arduino IDE to ensure that the device is running. Or you can also check your Firebase RTDB for new entries based on the sleep/wake period.
 
-### Step 4: Tuning your parameters
+## Step 4: Tuning your parameters
 You will most likely need to tweak your "dry" and "wet" thresholds, or even the sleep/wake period. To do this, you don't need to do a Arduino-upload. Just go to your Firebase RTDB, adjust the relevant values, and then set **"update"** to **"true"** (without quotes as it's a boolean value). When the device wakes up, it will check the "update" value, and update itself if "true". Once you see that the RTDB "update" is back to "false", it means that the device has updated itself with the new values.
 
-### Step 5: Firmware OTA
+## Step 5: Firmware OTA
 You will need Firebase Cloud Storage for this.
 
 1. Export your sketch as binary from in Arduino IDE
