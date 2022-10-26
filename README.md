@@ -56,9 +56,9 @@ There is nothing in this Arduino sketch that is peculiar to ESP32-S2-Mini. So, i
 TODO:
 
 ## Wiring for Capacitive Soil Sensor
-This sensor requires 3 connections: VCC, GND, and VALUE pin.
+This sensor requires 3 connections: __VCC__, __GND__, and __SIGNAL__ pin.
 
-On the ESP32, I used a GPIO as output to supply the 3.3V VCC, and an ADC connected to VALUE. GND is connected to any ground; it does not have to be the GND of the ESP32 board. All these can be connected without resistors, diodes, etc.
+On the ESP32, I used a GPIO as output to supply the 3.3V __VCC__, and an ADC connected to __SIGNAL__. __GND__ is connected to a common ground. All these can be connected without resistors, diodes, etc.
 
 It should be noted that using 3.3V for the sensor is not ideal as the ADC digital range between "wet" and "dry" becomes quite small (~150 integer value). 5V is probably better, if available, although I did not try it.
 
