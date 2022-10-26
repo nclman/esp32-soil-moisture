@@ -8,6 +8,8 @@ The main hardware components are rather cheap and are all sourced online:
 
     <img src="https://aws1.discourse-cdn.com/arduino/original/4X/3/7/1/371d2a082793927e2574b5d2cfde7aa1e07ddb1e.jpeg" width="150px">
   - 5V DC water pump
+  
+    <img src="https://m.media-amazon.com/images/I/4178f-gB1PL._CR0,0,640,338_SR580,306_.jpg" width="250px">
 
 If you want to make your device cordless:
   - 18650 LiOn battery
@@ -19,7 +21,8 @@ The device is WiFi-enabled and it can send logs to your Firebase Realtime Databa
 
 ## Prerequisites
 ### Hardware
-- ESP32-S2-Mini, ESP32-C3-Mini or any ESP32-based devkit should work
+- ESP32-S2-Mini, ~~ESP32-C3-Mini~~ or any ESP32-based devkit should work
+  - *DO NOT USE C3-MINI: It seems there are Wifi connectivity issues with the early WeMos Lolin C3-Mini boards* (https://github.com/espressif/arduino-esp32/issues/6430)
 - USB connection to your host computer
 - WiFi connectivity
 
@@ -79,7 +82,9 @@ These work well with a low-powered pump (like 5V version) since not much water p
 These can deliver water over a wider area. However, a 5V water pump will likely not be able to provide enough water pressure for the desired effect. 12V pumps should work better, especially if you intend to install multiple sprinklers.
 
 ## Wiring for Water Pump
-The pump will require a higher power output than what a GPIO can provide, so I used a transistor and a GPIO output pin to switch it on/off.
+The pump will require a higher power output than what a GPIO can provide, so I used a transistor and a GPIO output pin to switch it on/off. Depending on the specs of your pump, you may require a "better" transistor that can handle the throughput current. Or you may want to consider simply using a relay.
+
+__Note__: The metal "legs" of the transistor can rust over time. So, make sure to waterproof/coat it for durability.
 
 It is important to include a diode here to protect the transistor. Otherwise, you might find that your pump not working after awhile because the transistor is damaged.
 
@@ -124,7 +129,7 @@ You will need Firebase Cloud Storage for this.
 1. Export your sketch as binary from in Arduino IDE
 2. Upload the binary to your Firebase Cloud Storage and copy the URL with access token
 3. In your RTDB, create a pathname "/firmware/\<model id\>" where \<model id\> is a name you give to your family of devices. Under this path, create two key-value pairs:
-  - "latest" : "0.0.1"  - where "0.0.1" is a version number greater than what is currently on the device. This number must also match the version numbers in the binary.
+  - "latest" : "0.0.1"  - where "0.0.1" is a version number greater than what is currently on the device. This number should also match the version number in the new binary.
   - "url" : <url with access token>   - paste the value from (2).
 4. In your RTDB, set "update" to **true**
 
